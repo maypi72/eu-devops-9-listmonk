@@ -78,6 +78,18 @@ Configure the following secrets in your GitHub repository:
    terraform output
    ```
 
+## Switching to S3 Backend
+
+After LocalStack is running, you can switch to the S3 backend for state management:
+
+1. **Ensure LocalStack is running** (the `terraform-state-bucket` should exist)
+2. **Migrate the state**:
+   ```bash
+   # Uncomment the S3 backend block in providers.tf
+   # Comment out the local backend block
+   terraform init -migrate-state
+   ```
+
 ## Configuration
 
 The configuration uses LocalStack endpoints. Update `terraform.tfvars` with your specific values:
@@ -89,6 +101,7 @@ The configuration uses LocalStack endpoints. Update `terraform.tfvars` with your
 ## Important Notes
 
 - This configuration is designed for LocalStack (development/testing)
+- **Backend Configuration**: The S3 backend uses fixed values for LocalStack. For production deployments, consider using a different backend (like S3 on real AWS)
 - Secrets are stored in AWS Secrets Manager (LocalStack implementation)
 - S3 bucket has versioning enabled for backup safety
 - ECR repositories are configured for container image storage
