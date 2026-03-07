@@ -1,0 +1,53 @@
+name: Deploy infrastructure
+
+on:
+  push:
+    branches:
+      - main  # se ejecuta solo en push a main
+
+jobs:
+  provision:
+    runs-on: [self-hosted, Linux]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Grant execution permissions to scripts
+        run: |
+          chmod +x infra/scripts/*.sh
+
+      - name: Verificar existencia de scripts
+        run: |
+          for f in installk3s.sh install-ingress.sh install-cert-manager.sh install-localstack.sh; do
+            if [ ! -f infra/scripts/$f ]; then
+              echo "[ERROR] fichero infra/scripts/$f no existe";
+              exit 1;
+            fi
+          done
+
+      - name: Instalar k3s + Calico + Helm
+        if: success()
+        env:
+          K3S_CHANNEL: stable
+          # si quieres token/url puedes exportarlos aquí o usar secrets
+        run: sudo infra/scripts/installk3s.sh
+
+      - name: Instalar NGINX Ingress Controller
+        if: success()
+        run: infra/scripts/install-ingress.sh
+
+      - name: Instalar cert-manager con self signed
+        if: success()
+        env:
+          DOMAIN: listmonk.local
+        run: infra/scripts/install-cert-manager.sh
+
+      - name: Instalar LocalStack y crear bucket Terraform
+        if: success()
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          S3_BUCKET_NAME: terraform-state-bucket
+        run: infra/scripts/install-localstack.sh
+
+      # Puedes añadir pasos de terraform aquí para crear recursos en LocalStack si lo deseas
