@@ -34,17 +34,23 @@ LOCALSTACK_VERSION="${LOCALSTACK_VERSION:-0.6.27}"
 HELM_REPO_NAME="${HELM_REPO_NAME:-localstack}"
 HELM_REPO_URL="${HELM_REPO_URL:-https://helm.localstack.cloud}"
 RELEASE_NAME="${RELEASE_NAME:-localstack}"
+
 # Servicios AWS a habilitar
 SERVICES="${SERVICES:-s3,ecr,secretsmanager}"
 # ESCAPAMOS las comas para Helm: "s3\,ecr\,secretsmanager"
 HELM_SERVICES=$(echo "$SERVICES" | sed 's/,/\\,/g')
+
 # Configuración para Terraform
 S3_BUCKET_NAME="${S3_BUCKET_NAME:-terraform-state-bucket}"
+
+# Endpoint base (se actualizará si detectamos NodePort)
 LOCALSTACK_ENDPOINT="${LOCALSTACK_ENDPOINT:-http://localhost:4566}"
+
 AWS_REGION="${AWS_REGION:-us-east-1}"
 AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID:-test}"
 AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY:-test}"
-# Timeout para validaciones
+
+# Timeout para validaciones (segundos)
 VALIDATION_TIMEOUT="${VALIDATION_TIMEOUT:-300}"
 
 # -----------------------------
@@ -80,9 +86,9 @@ if command -v aws >/dev/null 2>&1; then
     echo "[INFO] AWS CLI ya instalado"
 else
     echo "[INFO] Instalando AWS CLI..."
-    # Instalar AWS CLI v2
+    # Instalar AWS CLI v2 (x86_64 por defecto; ajusta si usas otra arch)
     curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-    unzip awscliv2.zip
+    unzip -q awscliv2.zip
     sudo ./aws/install
     rm -rf aws awscliv2.zip
 fi
@@ -134,22 +140,22 @@ gh_group_end
 # Esperar a que LocalStack esté listo
 # -----------------------------
 gh_group "Esperar readiness de LocalStack"
-echo "[INFO] Esperando a que LocalStack esté listo..."
+echo "[INFO] Resolviendo endpoint de LocalStack..."
 
-# Obtener el puerto del servicio
-LOCALSTACK_PORT=$(kubectl get svc "$RELEASE_NAME" -n "$LOCALSTACK_NAMESPACE" -o jsonpath='{.spec.ports[?(@.name=="edge")].nodePort}')
-if [ -z "$LOCALSTACK_PORT" ]; then
-    echo "[ERROR] No se pudo obtener el puerto de LocalStack"
-    exit 1
+# Intentar obtener NodePort del servicio (si el chart lo expone como NodePort)
+LOCALSTACK_PORT=$(kubectl get svc "$RELEASE_NAME" -n "$LOCALSTACK_NAMESPACE" -o jsonpath='{.spec.ports[?(@.name=="edge")].nodePort}' 2>/dev/null || true)
+if [ -n "${LOCALSTACK_PORT:-}" ]; then
+    LOCALSTACK_ENDPOINT="http://localhost:$LOCALSTACK_PORT"
+    echo "[INFO] Detectado NodePort: $LOCALSTACK_PORT"
+else
+    echo "[INFO] No se detectó NodePort; se mantiene endpoint: $LOCALSTACK_ENDPOINT"
 fi
 
-# Actualizar endpoint si es necesario
-LOCALSTACK_ENDPOINT="http://localhost:$LOCALSTACK_PORT"
-
-# Esperar a que responda
-timeout "$VALIDATION_TIMEOUT" bash -c 'until curl -sf "$LOCALSTACK_ENDPOINT/_localstack/health" >/dev/null; do sleep 5; done' || {
+echo "[INFO] Esperando a que LocalStack esté listo en ${LOCALSTACK_ENDPOINT}..."
+# ⚠️ Corrección: usar comillas DOBLES en bash -c para expandir la variable
+timeout "$VALIDATION_TIMEOUT" bash -c "until curl -sf '${LOCALSTACK_ENDPOINT}/_localstack/health' >/dev/null; do sleep 5; done" || {
   echo "[ERROR] LocalStack no respondió en ${VALIDATION_TIMEOUT}s"
-  kubectl logs -n "$LOCALSTACK_NAMESPACE" deployment/"$RELEASE_NAME" --tail=50
+  kubectl logs -n "$LOCALSTACK_NAMESPACE" deployment/"$RELEASE_NAME" --tail=50 || true
   exit 1
 }
 gh_group_end
@@ -210,12 +216,17 @@ fi
 echo "[INFO] LocalStack instalado y listo. Bucket S3 '$S3_BUCKET_NAME' creado."
 echo "[INFO] Endpoint: $LOCALSTACK_ENDPOINT"
 echo "[INFO] Configura Terraform con:"
-echo "  backend \"s3\" {"
-echo "    bucket = \"$S3_BUCKET_NAME\""
-echo "    key    = \"terraform.tfstate\""
-echo "    region = \"$AWS_REGION\""
-echo "    endpoint = \"$LOCALSTACK_ENDPOINT\""
-echo "    skip_credentials_validation = true"
-echo "    skip_metadata_api_check = true"
-echo "  }"
+cat <<EOF
+  backend "s3" {
+    bucket                      = "$S3_BUCKET_NAME"
+    key                         = "terraform.tfstate"
+    region                      = "$AWS_REGION"
+    endpoint                    = "$LOCALSTACK_ENDPOINT"
+    skip_credentials_validation = true
+    skip_metadata_api_check     = true
+    force_path_style            = true
+    access_key                  = "$AWS_ACCESS_KEY_ID"
+    secret_key                  = "$AWS_SECRET_ACCESS_KEY"
+  }
+EOF
 gh_group_end
