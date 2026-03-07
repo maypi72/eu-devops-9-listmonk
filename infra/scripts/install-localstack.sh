@@ -3,6 +3,9 @@ set -euo pipefail
 
 echo "[INFO] === Instalación de LocalStack con Helm ==="
 
+# Forzamos KUBECONFIG para evitar el error x509 (unknown authority)
+export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
+
 # helpers para GitHub Actions (grupos plegables)
 gh_group() {
   if [ -n "${GITHUB_ACTIONS:-}" ]; then
@@ -22,7 +25,7 @@ gh_group_end() {
 # Parámetros/flags (ajustables por env)
 # -----------------------------
 LOCALSTACK_NAMESPACE="${LOCALSTACK_NAMESPACE:-localstack}"
-LOCALSTACK_VERSION="${LOCALSTACK_VERSION:-0.14.5}"
+LOCALSTACK_VERSION="${LOCALSTACK_VERSION:-0.6.27}"
 HELM_REPO_NAME="${HELM_REPO_NAME:-localstack}"
 HELM_REPO_URL="${HELM_REPO_URL:-https://helm.localstack.cloud}"
 RELEASE_NAME="${RELEASE_NAME:-localstack}"
