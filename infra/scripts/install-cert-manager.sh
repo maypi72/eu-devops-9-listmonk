@@ -3,6 +3,9 @@ set -euo pipefail
 
 echo "[INFO] === Instalación de cert-manager con self-signing ==="
 
+# Forzamos KUBECONFIG para evitar el error x509 (unknown authority)
+export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
+
 # helpers para GitHub Actions (grupos plegables)
 gh_group() {
   if [ -n "${GITHUB_ACTIONS:-}" ]; then
