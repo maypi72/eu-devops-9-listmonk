@@ -23,9 +23,9 @@ gh_group_end() {
 # -----------------------------
 INGRESS_NAMESPACE="${INGRESS_NAMESPACE:-ingress-nginx}"
 INGRESS_CHART_VERSION="${INGRESS_CHART_VERSION:-4.10.1}"
-HELM_REPO_NAME="${HELM_REPO_NAME:-nginx-stable}"
-HELM_REPO_URL="${HELM_REPO_URL:-https://helm.nginx.com/stable}"
-RELEASE_NAME="${RELEASE_NAME:-nginx-ingress}"
+HELM_REPO_NAME="${HELM_REPO_NAME:-ingressnginx}"
+HELM_REPO_URL="${HELM_REPO_URL:-https://kubernetes.github.io}"
+RELEASE_NAME="${RELEASE_NAME:-ingress-nginx}"
 # Configuración para laboratorio: NodePort
 SERVICE_TYPE="${SERVICE_TYPE:-NodePort}"
 # Puertos NodePort (opcionales, Helm asigna automáticamente si no se especifican)
@@ -36,6 +36,9 @@ DEFAULT_INGRESS_CLASS="${DEFAULT_INGRESS_CLASS:-true}"
 INGRESS_CLASS_NAME="${INGRESS_CLASS_NAME:-nginx}"
 # Timeout para validaciones
 VALIDATION_TIMEOUT="${VALIDATION_TIMEOUT:-300}"
+
+
+export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
 
 # -----------------------------
 # Pre-chequeos básicos
