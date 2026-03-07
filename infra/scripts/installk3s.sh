@@ -28,7 +28,8 @@ K3S_URL="${K3S_URL:-}"
 # Opciones adicionales de instalación (p.ej. "--node-taint foo=bar:NoSchedule")
 K3S_EXEC_EXTRA="${K3S_EXEC_EXTRA:-}"
 # Deshabilitar traefik, servicelb, flannel y network-policy de k3s para usar Calico como único CNI
-K3S_EXEC_OPTS="--disable traefik --disable servicelb --flannel-backend=none --disable-network-policy $K3S_EXEC_EXTRA"
+# además escribimos kubeconfig legible por otros usuarios
+K3S_EXEC_OPTS="--disable traefik --disable servicelb --flannel-backend=none --disable-network-policy $K3S_EXEC_EXTRA --write-kubeconfig-mode=644"
 KUBECONFIG_PATH="/etc/rancher/k3s/k3s.yaml"
 POD_CIDR="${POD_CIDR:-10.42.0.0/16}"        # k3s por defecto
 SVC_CIDR="${SVC_CIDR:-10.43.0.0/16}"        # k3s por defecto
@@ -100,6 +101,8 @@ else
     INSTALL_ENV+="INSTALL_K3S_CHANNEL=\"$K3S_CHANNEL\" INSTALL_K3S_EXEC=\"$K3S_EXEC_OPTS\""
 
     curl -sfL https://get.k3s.io | eval "$INSTALL_ENV" sh -
+    # ensure kubeconfig permissions are open
+    $SUDO chmod 644 /etc/rancher/k3s/k3s.yaml || true
 fi
 gh_group_end
 # Esperar API server listo
