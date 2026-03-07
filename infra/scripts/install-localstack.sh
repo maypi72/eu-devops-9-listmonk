@@ -115,7 +115,7 @@ else
     helm install "$RELEASE_NAME" "$HELM_REPO_NAME/localstack" \
         --namespace "$LOCALSTACK_NAMESPACE" \
         --version "$LOCALSTACK_VERSION" \
-        --set services="$SERVICES" \
+        --set startServices="$SERVICES" \
         --set persistence.enabled=true \
         --set persistence.size=1Gi \
         --wait \
