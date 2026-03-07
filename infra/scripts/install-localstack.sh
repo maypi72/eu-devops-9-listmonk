@@ -3,8 +3,13 @@ set -euo pipefail
 
 echo "[INFO] === Instalación de LocalStack con Helm ==="
 
+# -----------------------------
+# Configuración y Entorno
+# -----------------------------
+
 # Forzamos KUBECONFIG para evitar el error x509 (unknown authority)
 export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
+if [ ! -r "$KUBECONFIG" ]; then sudo chmod 644 "$KUBECONFIG"; fi
 
 # helpers para GitHub Actions (grupos plegables)
 gh_group() {
@@ -31,6 +36,8 @@ HELM_REPO_URL="${HELM_REPO_URL:-https://helm.localstack.cloud}"
 RELEASE_NAME="${RELEASE_NAME:-localstack}"
 # Servicios AWS a habilitar
 SERVICES="${SERVICES:-s3,ecr,secretsmanager}"
+# ESCAPAMOS las comas para Helm: "s3\,ecr\,secretsmanager"
+HELM_SERVICES=$(echo "$SERVICES" | sed 's/,/\\,/g')
 # Configuración para Terraform
 S3_BUCKET_NAME="${S3_BUCKET_NAME:-terraform-state-bucket}"
 LOCALSTACK_ENDPOINT="${LOCALSTACK_ENDPOINT:-http://localhost:4566}"
@@ -115,9 +122,9 @@ else
     helm install "$RELEASE_NAME" "$HELM_REPO_NAME/localstack" \
         --namespace "$LOCALSTACK_NAMESPACE" \
         --version "$LOCALSTACK_VERSION" \
-        --set startServices="$SERVICES" \
+        --set startServices="$HELM_SERVICES" \
         --set persistence.enabled=true \
-        --set persistence.size=1Gi \
+        --set persistence.size=5Gi \
         --wait \
         --timeout "${VALIDATION_TIMEOUT}s"
 fi
@@ -183,7 +190,7 @@ else
 fi
 
 # Verificar ECR (si habilitado)
-if echo "$SERVICES" | grep -q "ecr"; then
+if echo "$HELM_SERVICES" | grep -q "ecr"; then
     if aws ecr describe-repositories >/dev/null 2>&1; then
         echo "[INFO] ECR funcionando correctamente"
     else
@@ -192,7 +199,7 @@ if echo "$SERVICES" | grep -q "ecr"; then
 fi
 
 # Verificar Secrets Manager (si habilitado)
-if echo "$SERVICES" | grep -q "secretsmanager"; then
+if echo "$HELM_SERVICES" | grep -q "secretsmanager"; then
     if aws secretsmanager list-secrets >/dev/null 2>&1; then
         echo "[INFO] Secrets Manager funcionando correctamente"
     else
