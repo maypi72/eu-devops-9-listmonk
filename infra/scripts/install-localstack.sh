@@ -137,7 +137,7 @@ gh_group "Esperar readiness de LocalStack"
 echo "[INFO] Esperando a que LocalStack esté listo..."
 
 # Obtener el puerto del servicio
-LOCALSTACK_PORT=$(kubectl get svc "$RELEASE_NAME" -n "$LOCALSTACK_NAMESPACE" -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}')
+LOCALSTACK_PORT=$(kubectl get svc "$RELEASE_NAME" -n "$LOCALSTACK_NAMESPACE" -o jsonpath='{.spec.ports[?(@.name=="edge")].nodePort}')
 if [ -z "$LOCALSTACK_PORT" ]; then
     echo "[ERROR] No se pudo obtener el puerto de LocalStack"
     exit 1
