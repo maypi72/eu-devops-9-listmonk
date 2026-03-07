@@ -1,0 +1,18 @@
+# Terraform
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+*.tfvars
+
+# Environment variables
+.env
+
+# LocalStack
+.localstack/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

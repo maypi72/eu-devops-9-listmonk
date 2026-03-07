@@ -97,7 +97,7 @@ fi
 export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
 export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
 export AWS_DEFAULT_REGION="$AWS_REGION"
-export AWS_ENDPOINT_URL="$LOCALSTACK_ENDPOINT"
+#export AWS_ENDPOINT_URL="$LOCALSTACK_ENDPOINT" se exporta después porque vamos a hacer port-forwarding
 gh_group_end
 
 # -----------------------------
@@ -131,6 +131,9 @@ else
         --set startServices="$HELM_SERVICES" \
         --set persistence.enabled=true \
         --set persistence.size=5Gi \
+        --set service.type=NodePort \
+        --set service.nodePorts.edge=31566 \
+        --set service.ports.edge=4566 \
         --wait \
         --timeout "${VALIDATION_TIMEOUT}s"
 fi
@@ -139,7 +142,7 @@ gh_group_end
 # -----------------------------
 # Esperar a que LocalStack esté listo
 # -----------------------------
-gh_group "Esperar readiness de LocalStack"
+gh_group "Esperar readiness de LocalStack + port-forwarding"
 echo "[INFO] Resolviendo endpoint de LocalStack..."
 
 # Intentar obtener NodePort del servicio (si el chart lo expone como NodePort)
@@ -195,23 +198,6 @@ else
     exit 1
 fi
 
-# Verificar ECR (si habilitado)
-if echo "$HELM_SERVICES" | grep -q "ecr"; then
-    if aws ecr describe-repositories >/dev/null 2>&1; then
-        echo "[INFO] ECR funcionando correctamente"
-    else
-        echo "[WARN] ECR no disponible (puede que no esté inicializado aún)"
-    fi
-fi
-
-# Verificar Secrets Manager (si habilitado)
-if echo "$HELM_SERVICES" | grep -q "secretsmanager"; then
-    if aws secretsmanager list-secrets >/dev/null 2>&1; then
-        echo "[INFO] Secrets Manager funcionando correctamente"
-    else
-        echo "[WARN] Secrets Manager no disponible (puede que no esté inicializado aún)"
-    fi
-fi
 
 echo "[INFO] LocalStack instalado y listo. Bucket S3 '$S3_BUCKET_NAME' creado."
 echo "[INFO] Endpoint: $LOCALSTACK_ENDPOINT"

@@ -7,11 +7,15 @@
 
 # Localstack data
 data/
+.localstack/
 
 # Terraform state and backup files
 *.tfstate
 *.tfstate.*
 .terraform/
+terraform.tfstate
+terraform.tfstate.backup
+*.tfvars
 
 # Helm temporary and cache
 helmfile.d/*
@@ -29,3 +33,5 @@ tmp/
 # OS generated files
 .DS_Store
 Thumbs.db
+
+

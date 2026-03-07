@@ -50,4 +50,56 @@ jobs:
           S3_BUCKET_NAME: terraform-state-bucket
         run: infra/scripts/install-localstack.sh
 
-      # Puedes añadir pasos de terraform aquí para crear recursos en LocalStack si lo deseas
+      - name: Instalar Terraform
+        if: success()
+        run: |
+          if ! command -v terraform &> /dev/null; then
+            echo "Terraform no está instalado. Instalando Terraform v1.6.6..."
+            wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+            echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com jammy main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+            sudo apt update && sudo apt install -y terraform=1.6.6-1
+            echo "Terraform instalado correctamente"
+          else
+            echo "Terraform ya está instalado: $(terraform version)"
+          fi
+
+      - name: Configurar Terraform con LocalStack
+        if: success()
+        working-directory: infra/terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          LOCALSTACK_ENDPOINT: http://localhost:31566
+          ENVIRONMENT: development
+          POSTGRES_BACKUP_BUCKET_NAME: listmonk-postgres-backups
+          LISTMONK_ECR_REPO_NAME: listmonk/app
+          POSTGRES_ECR_REPO_NAME: listmonk/postgres
+          POSTGRES_SECRET_NAME: listmonk/postgres-credentials
+          POSTGRES_USERNAME: listmonk
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DATABASE: listmonk
+          POSTGRES_HOST: postgres
+          POSTGRES_PORT: "5432"
+          LISTMONK_SECRET_NAME: listmonk/app-secrets
+          LISTMONK_ADMIN_USERNAME: admin
+          LISTMONK_ADMIN_PASSWORD: ${{ secrets.LISTMONK_ADMIN_PASSWORD }}
+          SMTP_HOST: smtp.gmail.com
+          SMTP_PORT: "587"
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          FROM_EMAIL: noreply@listmonk.local
+        run: |
+          echo "Inicializando Terraform..."
+          terraform init
+
+          echo "Validando configuración..."
+          terraform validate
+
+          echo "Planificando cambios..."
+          terraform plan -out=tfplan
+
+          echo "Aplicando cambios..."
+          terraform apply -auto-approve tfplan
+
+          echo "Mostrando outputs..."
+          terraform output
