@@ -13,6 +13,12 @@ terraform {
   }
 
   # Configure local backend for development (switch to S3 after LocalStack is running)
+  # By default we use local state; having an explicit local backend avoids
+  # backend detection issues when the config is modified.
+  backend "local" {
+    path = "terraform.tfstate"
+  }
+
   # To use S3 backend, uncomment the lines below after running: terraform init -migrate-state
   /*
   backend "s3" {
@@ -47,9 +53,9 @@ provider "aws" {
 
 
   endpoints {
-    s3             = "http://localhost:4566"
-    ecr            = "http://localhost:4566"
-    secretsmanager = "http://localhost:4566"
+    s3             = var.localstack_endpoint
+    ecr            = var.localstack_endpoint
+    secretsmanager = var.localstack_endpoint
   }
 
   
