@@ -137,3 +137,10 @@ variable "from_email" {
   type        = string
   default     = "noreply@listmonk.local"
 }
+
+# Controls whether initial secret versions should be created
+variable "create_secret_versions" {
+  description = "Set to true when you have real values and want Terraform to create secret versions."
+  type        = bool
+  default     = false
+}

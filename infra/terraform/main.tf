@@ -101,7 +101,7 @@ resource "aws_secretsmanager_secret" "postgres_credentials" {
 }
 
 resource "aws_secretsmanager_secret_version" "postgres_credentials_version" {
-  count = data.external.secret_postgres_check.result.exists == "false" ? 1 : 0
+  count = var.create_secret_versions && data.external.secret_postgres_check.result.exists == "false" ? 1 : 0
   secret_id = aws_secretsmanager_secret.postgres_credentials[0].id
 
   secret_string = jsonencode({
@@ -127,7 +127,7 @@ resource "aws_secretsmanager_secret" "listmonk_app_secrets" {
 }
 
 resource "aws_secretsmanager_secret_version" "listmonk_app_secrets_version" {
-  count = data.external.secret_listmonk_check.result.exists == "false" ? 1 : 0
+  count = var.create_secret_versions && data.external.secret_listmonk_check.result.exists == "false" ? 1 : 0
   secret_id = aws_secretsmanager_secret.listmonk_app_secrets[0].id
 
   secret_string = jsonencode({
