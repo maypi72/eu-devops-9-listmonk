@@ -1,5 +1,28 @@
+# Data sources to check existence
+
+data "external" "s3_bucket_check" {
+  program = ["bash", "-c", "if aws s3api head-bucket --bucket ${var.postgres_backup_bucket_name} 2>/dev/null; then echo '{\"exists\": \"true\"}'; else echo '{\"exists\": \"false\"}'; fi"]
+}
+
+data "external" "ecr_listmonk_check" {
+  program = ["bash", "-c", "if aws ecr describe-repositories --repository-names ${var.listmonk_ecr_repo_name} --region $AWS_DEFAULT_REGION 2>/dev/null; then echo '{\"exists\": \"true\"}'; else echo '{\"exists\": \"false\"}'; fi"]
+}
+
+data "external" "ecr_postgres_check" {
+  program = ["bash", "-c", "if aws ecr describe-repositories --repository-names ${var.postgres_ecr_repo_name} --region $AWS_DEFAULT_REGION 2>/dev/null; then echo '{\"exists\": \"true\"}'; else echo '{\"exists\": \"false\"}'; fi"]
+}
+
+data "external" "secret_postgres_check" {
+  program = ["bash", "-c", "if aws secretsmanager describe-secret --secret-id ${var.postgres_secret_name} 2>/dev/null; then echo '{\"exists\": \"true\"}'; else echo '{\"exists\": \"false\"}'; fi"]
+}
+
+data "external" "secret_listmonk_check" {
+  program = ["bash", "-c", "if aws secretsmanager describe-secret --secret-id ${var.listmonk_secret_name} 2>/dev/null; then echo '{\"exists\": \"true\"}'; else echo '{\"exists\": \"false\"}'; fi"]
+}
+
 # S3 Bucket for PostgreSQL backups
 resource "aws_s3_bucket" "postgres_backups" {
+  count = data.external.s3_bucket_check.result.exists == "false" ? 1 : 0
   bucket = var.postgres_backup_bucket_name
 
   tags = {
@@ -11,7 +34,8 @@ resource "aws_s3_bucket" "postgres_backups" {
 
 # S3 Bucket versioning for backups
 resource "aws_s3_bucket_versioning" "postgres_backups_versioning" {
-  bucket = aws_s3_bucket.postgres_backups.id
+  count = data.external.s3_bucket_check.result.exists == "false" ? 1 : 0
+  bucket = aws_s3_bucket.postgres_backups[0].id
   versioning_configuration {
     status = "Enabled"
   }
@@ -19,7 +43,8 @@ resource "aws_s3_bucket_versioning" "postgres_backups_versioning" {
 
 # S3 Bucket public access block for security
 resource "aws_s3_bucket_public_access_block" "postgres_backups_pab" {
-  bucket = aws_s3_bucket.postgres_backups.id
+  count = data.external.s3_bucket_check.result.exists == "false" ? 1 : 0
+  bucket = aws_s3_bucket.postgres_backups[0].id
 
   block_public_acls       = true
   block_public_policy     = true
@@ -29,6 +54,7 @@ resource "aws_s3_bucket_public_access_block" "postgres_backups_pab" {
 
 # ECR Repository for Listmonk application
 resource "aws_ecr_repository" "listmonk_app" {
+  count = data.external.ecr_listmonk_check.result.exists == "false" ? 1 : 0
   name                 = var.listmonk_ecr_repo_name
   image_tag_mutability = "MUTABLE"
 
@@ -44,6 +70,7 @@ resource "aws_ecr_repository" "listmonk_app" {
 
 # ECR Repository for PostgreSQL
 resource "aws_ecr_repository" "postgres" {
+  count = data.external.ecr_postgres_check.result.exists == "false" ? 1 : 0
   name                 = var.postgres_ecr_repo_name
   image_tag_mutability = "MUTABLE"
 
@@ -59,6 +86,7 @@ resource "aws_ecr_repository" "postgres" {
 
 # AWS Secrets Manager for PostgreSQL credentials
 resource "aws_secretsmanager_secret" "postgres_credentials" {
+  count = data.external.secret_postgres_check.result.exists == "false" ? 1 : 0
   name                    = var.postgres_secret_name
   description             = "PostgreSQL database credentials for Listmonk"
   recovery_window_in_days = 0
@@ -70,7 +98,8 @@ resource "aws_secretsmanager_secret" "postgres_credentials" {
 }
 
 resource "aws_secretsmanager_secret_version" "postgres_credentials_version" {
-  secret_id = aws_secretsmanager_secret.postgres_credentials.id
+  count = data.external.secret_postgres_check.result.exists == "false" ? 1 : 0
+  secret_id = aws_secretsmanager_secret.postgres_credentials[0].id
 
   secret_string = jsonencode({
     username = var.postgres_username
@@ -83,6 +112,7 @@ resource "aws_secretsmanager_secret_version" "postgres_credentials_version" {
 
 # AWS Secrets Manager for Listmonk application secrets
 resource "aws_secretsmanager_secret" "listmonk_app_secrets" {
+  count = data.external.secret_listmonk_check.result.exists == "false" ? 1 : 0
   name                    = var.listmonk_secret_name
   description             = "Listmonk application configuration secrets"
   recovery_window_in_days = 0
@@ -94,7 +124,8 @@ resource "aws_secretsmanager_secret" "listmonk_app_secrets" {
 }
 
 resource "aws_secretsmanager_secret_version" "listmonk_app_secrets_version" {
-  secret_id = aws_secretsmanager_secret.listmonk_app_secrets.id
+  count = data.external.secret_listmonk_check.result.exists == "false" ? 1 : 0
+  secret_id = aws_secretsmanager_secret.listmonk_app_secrets[0].id
 
   secret_string = jsonencode({
     admin_username = var.listmonk_admin_username
