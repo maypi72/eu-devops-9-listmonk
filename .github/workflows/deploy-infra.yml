@@ -18,7 +18,7 @@ jobs:
 
       - name: Verificar existencia de scripts
         run: |
-          for f in installk3s.sh install-ingress.sh install-cert-manager.sh install-localstack.sh; do
+          for f in installk3s.sh install-ingress.sh install-cert-manager.sh install-localstack.sh install-observability.sh; do
             if [ ! -f infra/scripts/$f ]; then
               echo "[ERROR] fichero infra/scripts/$f no existe";
               exit 1;
@@ -103,3 +103,7 @@ jobs:
 
           echo "Mostrando outputs..."
           terraform output
+
+      - name: Instalar stack de observabilidad (Prometheus, Grafana, Alloy)
+        if: success()
+        run: infra/scripts/install-observability.sh
