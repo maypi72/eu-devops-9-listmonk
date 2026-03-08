@@ -47,9 +47,9 @@ provider "aws" {
 
 
   endpoints {
-    s3       = var.localstack_endpoint
-    ecr      = var.localstack_endpoint
-    secretsmanager = var.localstack_endpoint
+    s3             = "http://localhost:4566"
+    ecr            = "http://localhost:4566"
+    secretsmanager = "http://localhost:4566"
   }
 
   

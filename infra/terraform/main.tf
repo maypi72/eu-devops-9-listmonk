@@ -1,7 +1,7 @@
 # Data sources to check existence
 
 data "external" "s3_bucket_check" {
-  program = ["bash", "-c", "if aws s3api head-bucket --bucket ${var.postgres_backup_bucket_name} --endpoint-url ${var.localstack_endpoint} 2>/dev/null; then echo '{\"exists\": \"true\"}'; else echo '{\"exists\": \"false\"}'; fi"]
+  program = ["bash", "-c", "if aws s3api head-bucket --bucket ${var.postgres_backup_bucket_name} --endpoint-url http://localhost:4566 --region us-east-1 2>/dev/null; then echo '{\"exists\": \"true\"}'; else echo '{\"exists\": \"false\"}'; fi"]
 }
 
 # ECR checks commented out
@@ -14,11 +14,11 @@ data "external" "s3_bucket_check" {
 # }
 
 data "external" "secret_postgres_check" {
-  program = ["bash", "-c", "if aws secretsmanager describe-secret --secret-id ${var.postgres_secret_name} --endpoint-url ${var.localstack_endpoint} 2>/dev/null; then echo '{\"exists\": \"true\"}'; else echo '{\"exists\": \"false\"}'; fi"]
+  program = ["bash", "-c", "if aws secretsmanager describe-secret --secret-id ${var.postgres_secret_name} --endpoint-url http://localhost:4566 --region us-east-1 2>/dev/null; then echo '{\"exists\": \"true\"}'; else echo '{\"exists\": \"false\"}'; fi"]
 }
 
 data "external" "secret_listmonk_check" {
-  program = ["bash", "-c", "if aws secretsmanager describe-secret --secret-id ${var.listmonk_secret_name} --endpoint-url ${var.localstack_endpoint} 2>/dev/null; then echo '{\"exists\": \"true\"}'; else echo '{\"exists\": \"false\"}'; fi"]
+  program = ["bash", "-c", "if aws secretsmanager describe-secret --secret-id ${var.listmonk_secret_name} --endpoint-url http://localhost:4566 --region us-east-1 2>/dev/null; then echo '{\"exists\": \"true\"}'; else echo '{\"exists\": \"false\"}'; fi"]
 }
 
 # S3 Bucket for PostgreSQL backups
