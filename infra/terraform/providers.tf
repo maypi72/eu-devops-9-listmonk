@@ -1,5 +1,6 @@
 # Configure Terraform
 terraform {
+  required_version = ">= 1.14.0"
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -28,10 +29,8 @@ terraform {
     secret_key                  = "test"
   }
   */
-  backend "local" {
-    path = "terraform.tfstate"
-  }
 }
+  
 
 # Configure the AWS Provider
 provider "aws" {
@@ -41,10 +40,17 @@ provider "aws" {
   skip_credentials_validation = true
   skip_metadata_api_check     = true
   skip_requesting_account_id  = true
+  # Para facilitar el uso con LocalStack 
+  s3_use_path_style           = true
+  skip_region_validation      = true
+  sts_region                  = var.aws_region
+
 
   endpoints {
     s3       = var.localstack_endpoint
     ecr      = var.localstack_endpoint
     secretsmanager = var.localstack_endpoint
   }
+
+  
 }
