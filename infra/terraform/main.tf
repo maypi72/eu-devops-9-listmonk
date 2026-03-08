@@ -1,23 +1,24 @@
 # Data sources to check existence
 
 data "external" "s3_bucket_check" {
-  program = ["bash", "-c", "if aws s3api head-bucket --bucket ${var.postgres_backup_bucket_name} 2>/dev/null; then echo '{\"exists\": \"true\"}'; else echo '{\"exists\": \"false\"}'; fi"]
+  program = ["bash", "-c", "if aws s3api head-bucket --bucket ${var.postgres_backup_bucket_name} --endpoint-url ${var.localstack_endpoint} 2>/dev/null; then echo '{\"exists\": \"true\"}'; else echo '{\"exists\": \"false\"}'; fi"]
 }
 
-data "external" "ecr_listmonk_check" {
-  program = ["bash", "-c", "if aws ecr describe-repositories --repository-names ${var.listmonk_ecr_repo_name} --region $AWS_DEFAULT_REGION 2>/dev/null; then echo '{\"exists\": \"true\"}'; else echo '{\"exists\": \"false\"}'; fi"]
-}
+# ECR checks commented out
+# data "external" "ecr_listmonk_check" {
+#   program = ["bash", "-c", "if aws ecr describe-repositories --repository-names ${var.listmonk_ecr_repo_name} --endpoint-url ${var.localstack_endpoint} 2>/dev/null; then echo '{\"exists\": \"true\"}'; else echo '{\"exists\": \"false\"}'; fi"]
+# }
 
-data "external" "ecr_postgres_check" {
-  program = ["bash", "-c", "if aws ecr describe-repositories --repository-names ${var.postgres_ecr_repo_name} --region $AWS_DEFAULT_REGION 2>/dev/null; then echo '{\"exists\": \"true\"}'; else echo '{\"exists\": \"false\"}'; fi"]
-}
+# data "external" "ecr_postgres_check" {
+#   program = ["bash", "-c", "if aws ecr describe-repositories --repository-names ${var.postgres_ecr_repo_name} --endpoint-url ${var.localstack_endpoint} 2>/dev/null; then echo '{\"exists\": \"true\"}'; else echo '{\"exists\": \"false\"}'; fi"]
+# }
 
 data "external" "secret_postgres_check" {
-  program = ["bash", "-c", "if aws secretsmanager describe-secret --secret-id ${var.postgres_secret_name} 2>/dev/null; then echo '{\"exists\": \"true\"}'; else echo '{\"exists\": \"false\"}'; fi"]
+  program = ["bash", "-c", "if aws secretsmanager describe-secret --secret-id ${var.postgres_secret_name} --endpoint-url ${var.localstack_endpoint} 2>/dev/null; then echo '{\"exists\": \"true\"}'; else echo '{\"exists\": \"false\"}'; fi"]
 }
 
 data "external" "secret_listmonk_check" {
-  program = ["bash", "-c", "if aws secretsmanager describe-secret --secret-id ${var.listmonk_secret_name} 2>/dev/null; then echo '{\"exists\": \"true\"}'; else echo '{\"exists\": \"false\"}'; fi"]
+  program = ["bash", "-c", "if aws secretsmanager describe-secret --secret-id ${var.listmonk_secret_name} --endpoint-url ${var.localstack_endpoint} 2>/dev/null; then echo '{\"exists\": \"true\"}'; else echo '{\"exists\": \"false\"}'; fi"]
 }
 
 # S3 Bucket for PostgreSQL backups
@@ -53,36 +54,38 @@ resource "aws_s3_bucket_public_access_block" "postgres_backups_pab" {
 }
 
 # ECR Repository for Listmonk application
-resource "aws_ecr_repository" "listmonk_app" {
-  count = data.external.ecr_listmonk_check.result.exists == "false" ? 1 : 0
-  name                 = var.listmonk_ecr_repo_name
-  image_tag_mutability = "MUTABLE"
+# Commented out because ECR is not supported in free LocalStack
+# resource "aws_ecr_repository" "listmonk_app" {
+#   count = data.external.ecr_listmonk_check.result.exists == "false" ? 1 : 0
+#   name                 = var.listmonk_ecr_repo_name
+#   image_tag_mutability = "MUTABLE"
 
-  image_scanning_configuration {
-    scan_on_push = false
-  }
+#   image_scanning_configuration {
+#     scan_on_push = false
+#   }
 
-  tags = {
-    Name        = "Listmonk Application"
-    Environment = var.environment
-  }
-}
+#   tags = {
+#     Name        = "Listmonk Application"
+#     Environment = var.environment
+#   }
+# }
 
 # ECR Repository for PostgreSQL
-resource "aws_ecr_repository" "postgres" {
-  count = data.external.ecr_postgres_check.result.exists == "false" ? 1 : 0
-  name                 = var.postgres_ecr_repo_name
-  image_tag_mutability = "MUTABLE"
+# Commented out because ECR is not supported in free LocalStack
+# resource "aws_ecr_repository" "postgres" {
+#   count = data.external.ecr_postgres_check.result.exists == "false" ? 1 : 0
+#   name                 = var.postgres_ecr_repo_name
+#   image_tag_mutability = "MUTABLE"
 
-  image_scanning_configuration {
-    scan_on_push = false
-  }
+#   image_scanning_configuration {
+#     scan_on_push = false
+#   }
 
-  tags = {
-    Name        = "PostgreSQL Database"
-    Environment = var.environment
-  }
-}
+#   tags = {
+#     Name        = "PostgreSQL Database"
+#     Environment = var.environment
+#   }
+# }
 
 # AWS Secrets Manager for PostgreSQL credentials
 resource "aws_secretsmanager_secret" "postgres_credentials" {

@@ -15,25 +15,26 @@ output "postgres_backup_bucket_arn" {
 }
 
 # ECR Repository outputs
-output "listmonk_ecr_repository_url" {
-  description = "URL of the ECR repository for Listmonk application"
-  value       = try(aws_ecr_repository.listmonk_app[0].repository_url, null)
-}
+# Commented out because ECR is not supported in free LocalStack
+# output "listmonk_ecr_repository_url" {
+#   description = "URL of the ECR repository for Listmonk application"
+#   value       = try(aws_ecr_repository.listmonk_app[0].repository_url, null)
+# }
 
-output "postgres_ecr_repository_url" {
-  description = "URL of the ECR repository for PostgreSQL"
-  value       = try(aws_ecr_repository.postgres[0].repository_url, null)
-}
+# output "postgres_ecr_repository_url" {
+#   description = "URL of the ECR repository for PostgreSQL"
+#   value       = try(aws_ecr_repository.postgres[0].repository_url, null)
+# }
 
-output "listmonk_ecr_repository_arn" {
-  description = "ARN of the ECR repository for Listmonk application"
-  value       = try(aws_ecr_repository.listmonk_app[0].arn, null)
-}
+# output "listmonk_ecr_repository_arn" {
+#   description = "ARN of the ECR repository for Listmonk application"
+#   value       = try(aws_ecr_repository.listmonk_app[0].arn, null)
+# }
 
-output "postgres_ecr_repository_arn" {
-  description = "ARN of the ECR repository for PostgreSQL"
-  value       = try(aws_ecr_repository.postgres[0].arn, null)
-}
+# output "postgres_ecr_repository_arn" {
+#   description = "ARN of the ECR repository for PostgreSQL"
+#   value       = try(aws_ecr_repository.postgres[0].arn, null)
+# }
 
 # Secrets Manager outputs
 output "postgres_secret_arn" {
