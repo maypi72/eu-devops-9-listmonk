@@ -1,7 +1,7 @@
 # Data sources to check existence
 
 data "external" "s3_bucket_check" {
-  program = ["bash", "-c", "AWS_ACCESS_KEY_ID=${var.aws_access_key_id} AWS_SECRET_ACCESS_KEY=${var.aws_secret_access_key} aws s3api head-bucket --bucket ${var.postgres_backup_bucket_name} --endpoint-url ${var.localstack_endpoint} --region ${var.aws_region} 2>/dev/null && echo '{\"exists\": \"true\"}' || echo '{\"exists\": \"false\"}'"]
+  program = ["bash", "-c", "AWS_ACCESS_KEY_ID=${var.aws_access_key_id} AWS_SECRET_ACCESS_KEY=${var.aws_secret_access_key} aws s3api head-bucket --bucket ${var.postgres_backup_bucket_name} --endpoint-url ${var.localstack_endpoint} --region ${var.aws_region} > /dev/null 2>&1 && echo '{\"exists\": \"true\"}' || echo '{\"exists\": \"false\"}'"]
 }
 
 # ECR checks commented out
@@ -14,11 +14,11 @@ data "external" "s3_bucket_check" {
 # }
 
 data "external" "secret_postgres_check" {
-  program = ["bash", "-c", "AWS_ACCESS_KEY_ID=${var.aws_access_key_id} AWS_SECRET_ACCESS_KEY=${var.aws_secret_access_key} aws secretsmanager describe-secret --secret-id ${var.postgres_secret_name} --endpoint-url ${var.localstack_endpoint} --region ${var.aws_region} 2>/dev/null && echo '{\"exists\": \"true\"}' || echo '{\"exists\": \"false\"}'"]
+  program = ["bash", "-c", "AWS_ACCESS_KEY_ID=${var.aws_access_key_id} AWS_SECRET_ACCESS_KEY=${var.aws_secret_access_key} aws secretsmanager describe-secret --secret-id ${var.postgres_secret_name} --endpoint-url ${var.localstack_endpoint} --region ${var.aws_region} > /dev/null 2>&1 && echo '{\"exists\": \"true\"}' || echo '{\"exists\": \"false\"}'"]
 }
 
 data "external" "secret_listmonk_check" {
-  program = ["bash", "-c", "AWS_ACCESS_KEY_ID=${var.aws_access_key_id} AWS_SECRET_ACCESS_KEY=${var.aws_secret_access_key} aws secretsmanager describe-secret --secret-id ${var.listmonk_secret_name} --endpoint-url ${var.localstack_endpoint} --region ${var.aws_region} 2>/dev/null && echo '{\"exists\": \"true\"}' || echo '{\"exists\": \"false\"}'"]
+  program = ["bash", "-c", "AWS_ACCESS_KEY_ID=${var.aws_access_key_id} AWS_SECRET_ACCESS_KEY=${var.aws_secret_access_key} aws secretsmanager describe-secret --secret-id ${var.listmonk_secret_name} --endpoint-url ${var.localstack_endpoint} --region ${var.aws_region} > /dev/null 2>&1 && echo '{\"exists\": \"true\"}' || echo '{\"exists\": \"false\"}'"]
 }
 
 # S3 Bucket for PostgreSQL backups
